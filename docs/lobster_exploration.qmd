@@ -1,0 +1,80 @@
+---
+title: "lobster_exploration"
+author: "zachyloo"
+format: html
+editor: visual
+---
+
+# Task 2: Exploring Lobster Data
+```{r}
+library(here)
+library(tidyverse)
+lobsters <- read_csv(here::here("data", "Lobster_Abundance_All_Years_20210412.csv"), na = c("-99999", "")) |> 
+  janitor::clean_names()  
+  
+#uncount dplyr?
+```
+
+Summary Table
+```{r}
+lobster_table <- lobsters |>
+  select("site", "year", "count") |> # select cols
+  group_by(site, year) |> # we want to 'squish' by site and year 
+  summarize(site_year_total = sum(count)) # find the sum per site and per year
+```
+
+Plot
+```{r}
+ggplot(data = lobster_table, aes(x = year, y = site_year_total, color = site)) +
+  geom_point() +
+  facet_wrap(~site) +
+  labs(title = "Lobster Count Over Time at Each Site",
+       x = "Year",
+       y = "Count") +
+  theme_light()
+```
+
+Legal Larry the Lobster
+Legal size: 79.76 mm
+```{r}
+lobster_legal <- lobsters |> 
+  filter(year == 2020) |> # filter to only year 2020
+  mutate(legal = case_when( # combining mutate() and case when() to add 'legal' col. filling in yes or no depending on size_mm
+    size_mm >= 79.76 ~ "yes", 
+    size_mm < 79.76 ~ "no",
+  )) |> 
+  group_by(site, legal) |> 
+  summarize(site_total = sum(count, na.rm = TRUE), .groups = "drop")
+```
+
+Plot
+```{r}
+ggplot(data = lobster_legal, aes(x = site, y = site_total, fill = legal)) + 
+  geom_col(position = "fill") +
+  labs(title = "Legal Size Lobsters at Each Site",
+       x = "Site",
+       y = "Proportion") +
+  theme_light()
+```
+
+# Task 3: More dplyr practice
+```{r}
+# filter to rows with IVEE, CARP, NAPL
+site_list <- c("IVEE", "CARP", "NAPL")
+filter_a <- lobsters |> 
+  filter(site == site_list)
+# use unique() to check
+
+# filter rows for only lobsters in August
+filter_b <- lobsters |> 
+  filter(month == 8)
+
+# filter for lobsters at AQUE site OR size > 70mm
+filter_c <- lobsters |> 
+  filter(site == "AQUE" | size_mm > 70)
+
+# filter for observations NOT including site NAPL
+filter_d <- lobsters |> 
+  filter(site != "NAPL")
+```
+
