@@ -50,7 +50,8 @@ lobster_legal <- lobsters |>
 Plot
 ```{r}
 ggplot(data = lobster_legal, aes(x = site, y = site_total, fill = legal)) + 
-  geom_col(position = "fill") +
+  geom_col(position = "fill") + 
+  scale_fill_brewer(palette = "Paired") +
   labs(title = "Legal Size Lobsters at Each Site",
        x = "Site",
        y = "Proportion") +
@@ -58,6 +59,7 @@ ggplot(data = lobster_legal, aes(x = site, y = site_total, fill = legal)) +
 ```
 
 # Task 3: More dplyr practice
+## Filtering
 ```{r}
 # filter to rows with IVEE, CARP, NAPL
 site_list <- c("IVEE", "CARP", "NAPL")
@@ -76,5 +78,66 @@ filter_c <- lobsters |>
 # filter for observations NOT including site NAPL
 filter_d <- lobsters |> 
   filter(site != "NAPL")
+```
+
+## Groupby & summarize
+1. Find the mean and standard deviation of lobster carapace length, grouped by site.
+```{r}
+mean_std_lobsters <- lobsters |> 
+  group_by(site) |> 
+  summarize(mean_length_mm = mean(size_mm, na.rm = TRUE),
+            std_length_mm = sd(size_mm, na.rm = TRUE))
+```
+
+2. Find the maximum carapace length by site and month.
+```{r}
+max_length_lobsters <- lobsters |> # why are some months missing?
+  group_by(site, month) |> 
+  summarize(max_length_mm = max(size_mm, na.rm = TRUE))
+
+# max size of 600mm???
+lobsters |> 
+  filter(size_mm > 500)
+
+```
+
+## Mutating
+1. Add a new column that contains lobster carapace length converted to centimeters. Check output.
+```{r}
+lobsters_cm <- lobsters |> 
+  mutate(size_cm = size_mm / 10)
+```
+
+2. Update the site column to all lowercase. Check output.
+```{r}
+new_names_lobsters <- lobsters |> 
+  mutate(site = tolower(site))
+```
+
+3. Convert the area column to a character.
+```{r}
+area_chr <- lobsters |> 
+  mutate(area = as.character(area))
+
+class(area_chr$area)
+```
+
+## Case when
+1. Add a new column called `size_bin` that contains “small” if carapace size is <= 70 mm, or “large” if it is greater than 70 mm
+```{r}
+binned_lobsters <- lobsters |> 
+  mutate(size_bin = case_when(
+    size_mm <= 70 ~ "small",
+    size_mm > 70 ~ "large"))
+```
+
+2. Add a new column called designation that contains “MPA” if the site is “IVEE” or “NAPL”, and “not MPA” for all other outcomes.
+```{r}
+mpa_lobsters <- lobsters |> 
+  mutate(designation = case_when(
+    site == "IVEE" ~ "MPA",
+    site == "NAPL" ~ "MPA",
+    .default = "not MPA"
+  ))
 ```
 
